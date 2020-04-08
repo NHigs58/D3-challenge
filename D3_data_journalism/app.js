@@ -21,6 +21,77 @@ var svg = d3.select("#scatter")
 var chartGroup = svg.append("g")
   .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
+  var chosenXAxis = "poverty";
+
+  // function used for updating x-scale var upon click on axis label
+function xScale(povertyData, chosenXAxis) {
+  // create scales
+  var xLinearScale = d3.scaleLinear()
+    .domain([d3.min(povertyData, d => d[chosenXAxis]) * 0.8,
+      d3.max(povertyData, d => d[chosenXAxis]) * 1.2
+    ])
+    .range([0, width]);
+
+  return xLinearScale;
+
+}
+
+// function used for updating xAxis var upon click on axis label
+function renderAxes(newXScale, xAxis) {
+  var bottomAxis = d3.axisBottom(newXScale);
+
+  xAxis.transition()
+    .duration(1000)
+    .call(bottomAxis);
+
+  return xAxis;
+}
+
+// function used for updating circles group with a transition to
+// new circles
+function renderCircles(circlesGroup, newXScale, chosenXAxis) {
+
+  circlesGroup.transition()
+    .duration(1000)
+    .attr("cx", d => newXScale(d[chosenXAxis]));
+
+  return circlesGroup;
+}
+
+// function used for updating circles group with new tooltip
+function updateToolTip(chosenXAxis, circlesGroup) {
+
+  var label;
+
+  if (chosenXAxis === "poverty") {
+    label = "In Poverty (%):";
+  }
+  else if (chosenXAxis === "age"){
+    label = "Age (median):";
+  }
+  else {
+    label = "Household Income:";
+  }
+
+  var toolTip = d3.tip()
+    .attr("class", "tooltip")
+    .offset([80, -60])
+    .html(function(d) {
+      return (`${d.poverty}<br>${label} ${d[chosenXAxis]}`);
+    });
+
+  circlesGroup.call(toolTip);
+
+  circlesGroup.on("mouseover", function(data) {
+    toolTip.show(data);
+  })
+    // onmouseout event
+    .on("mouseout", function(data, index) {
+      toolTip.hide(data);
+    });
+
+  return circlesGroup;
+}
 // Import Data
 d3.csv("data.csv").then(function(povertyData) {
 
@@ -67,6 +138,23 @@ d3.csv("data.csv").then(function(povertyData) {
     .attr("fill", "blue")
     .attr("opacity", ".5");
 
+    var circleLabels = chartGroup.selectAll(null).data(povertyData).enter().append("text");
+
+    circleLabels
+      .attr("x", function(d) {
+        return xLinearScale(d.poverty);
+      })
+      .attr("y", function(d) {
+        return yLinearScale(d.obesity);
+      })
+      .text(function(d) {
+        return d.abbr;
+      })
+      .attr("font-family", "sans-serif")
+      .attr("font-size", "10px")
+      .attr("text-anchor", "middle")
+      .attr("fill", "white");
+
     // // Step 6: Initialize tool tip
     // // ==============================
     // var toolTip = d3.tip()
@@ -102,7 +190,7 @@ d3.csv("data.csv").then(function(povertyData) {
     chartGroup.append("text")
       .attr("transform", `translate(${width / 2}, ${height + margin.top + 30})`)
       .attr("class", "axisText")
-      .text("obesity");
+      .text("Obesity");
   }).catch(function(error) {
     console.log(error);
   });
