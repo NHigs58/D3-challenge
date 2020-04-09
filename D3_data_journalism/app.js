@@ -325,7 +325,7 @@ labelsGroup.selectAll("text")
       .classed("active", false)
       .classed("inactive", true);
   }
-  else if (chosenYAxis === "age") {
+  else if (chosenYAxis === "smokes") {
     obesityLabel
       .classed("active", false)
       .classed("inactive", true);
